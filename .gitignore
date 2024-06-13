@@ -16,9 +16,10 @@
 #*.sqlite3
 
 # Ignore SQLite3 source files
-/sqlite3/
-*.h
-*.c
+/sqlite3/*.h
+/sqlite3/*.c
+#*.h
+#*.c
 
 # Ignore configuration files that might contain sensitive information
 /config/*.json
