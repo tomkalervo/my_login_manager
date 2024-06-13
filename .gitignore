@@ -11,9 +11,9 @@
 /database/*.db
 /database/*.sqlite
 /database/*.sqlite3
-*.db
-*.sqlite
-*.sqlite3
+#*.db
+#*.sqlite
+#*.sqlite3
 
 # Ignore SQLite3 source files
 /sqlite3/
