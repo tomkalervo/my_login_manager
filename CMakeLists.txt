@@ -13,6 +13,7 @@ include_directories(sqlite3)
 set(SOURCES
     src/login_manager.cpp
     src/database.cpp
+    src/hash_password.cpp
     sqlite3/sqlite3.c
   )
 # Create a library from the source files
@@ -29,4 +30,7 @@ enable_testing()
 add_executable(test_login_manager tests/test_login_manager.cpp)
 target_link_libraries(test_login_manager login_manager_lib)
 add_test(NAME TestLoginManager COMMAND test_login_manager)
+add_executable(test_hash_password tests/test_hash_password.cpp)
+target_link_libraries(test_hash_password login_manager_lib)
+add_test(NAME TestHashPassword COMMAND test_hash_password)
 
