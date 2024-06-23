@@ -3,6 +3,7 @@
 
 #include <string>
 #include "database.h"
+#include "hash_password.h"
 
 class LoginManager {
 public:

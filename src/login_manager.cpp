@@ -17,13 +17,13 @@ bool LoginManager::login(const std::string& username, const std::string& passwor
 }
 
 bool LoginManager::addLogin(const std::string& username, const std::string& password){
-  std::string hashedPassword, d_salt;
+  std::string d_salt;
   genSalt(d_salt);
   if (d_salt.empty()){
     return false;
   }
 
-  hash(s_salt + password + d_salt,hashedPassword);
+  std::string hashedPassword = HashPassword::usingSHA256(s_salt + password + d_salt);
   if(hashedPassword.empty()){
     return false;
   }
@@ -51,7 +51,7 @@ bool LoginManager::getHashedPassword(const std::string& usid, const std::string&
   if (!getSalt(usid, d_salt) || d_salt.empty() ) {
     return false;
   }
-  hash(s_salt + pw + d_salt, hashed_pw);
+  hashed_pw = HashPassword::usingSHA256(s_salt + pw + d_salt);
   return !hashed_pw.empty();
 }
 bool LoginManager::getSalt(const std::string& username, std::string& salt) {
