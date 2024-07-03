@@ -1,9 +1,19 @@
 #include "login_manager.h"
 #include <iostream>
 #include <string> // Include the necessary header for std::string
+#include <yaml-cpp/yaml.h>
 
-int main() {
-  LoginManager loginManager("database/login.db");
+int main(int argv, char** argc) {
+  if (argv != 2) {
+    std::cout << "Usage: ./login_manager path_to_login_database" << std::endl;
+    return 1;
+  }
+  
+  YAML::Node config = YAML::LoadFile(argc[1]);
+  std::string db_path = config["database"]["path"].as<std::string>();
+  std::cout << "Path: " << db_path << std::endl;
+
+  LoginManager loginManager(db_path);
   std::string command;
   while (command != "q"){
     std::cout << "Enter command {l | a | q}: ";

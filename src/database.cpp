@@ -61,7 +61,7 @@ bool Database::delUser(const char* secid, const char* password){
   sqlite3_bind_int64(stmt, 1, login_id);
   if (sqlite3_step(stmt) != SQLITE_DONE) {
     std::cerr << "SQL error: " << sqlite3_errmsg(db) << std::endl;
-    sqlite3_finalize(stmt);
+    //sqlite3_finalize(stmt);
     sqlite3_exec(db, "ROLLBACK;", 0, 0, &errMsg);
     sqlite3_free(errMsg);
     return false;
@@ -81,7 +81,7 @@ bool Database::delUser(const char* secid, const char* password){
   sqlite3_bind_int64(stmt, 1, login_id);
   if (sqlite3_step(stmt) != SQLITE_DONE) {
     std::cerr << "SQL error: " << sqlite3_errmsg(db) << std::endl;
-    sqlite3_finalize(stmt);
+    //sqlite3_finalize(stmt);
     sqlite3_exec(db, "ROLLBACK;", 0, 0, &errMsg);
     sqlite3_free(errMsg);
     return false;
@@ -123,7 +123,7 @@ bool Database::addUser(const char* secid, const char* password, const char* salt
   if (rc != SQLITE_DONE) {
     std::cerr << "SQL error: " << sqlite3_errmsg(db) << std::endl;
     sqlite3_exec(db, "ROLLBACK;", 0, 0, &errMsg);
-    sqlite3_finalize(stmt);
+    //sqlite3_finalize(stmt);
     sqlite3_free(errMsg);
     return rc;
   }
@@ -136,6 +136,7 @@ bool Database::addUser(const char* secid, const char* password, const char* salt
   if (rc != SQLITE_OK) {
     std::cerr << "SQL error: " << sqlite3_errmsg(db) << std::endl;
     sqlite3_exec(db, "ROLLBACK;", 0, 0, &errMsg);
+    sqlite3_free(errMsg);
     return rc;
   }
 
@@ -146,7 +147,8 @@ bool Database::addUser(const char* secid, const char* password, const char* salt
   if (rc != SQLITE_DONE) {
     std::cerr << "SQL error: " << sqlite3_errmsg(db) << std::endl;
     sqlite3_exec(db, "ROLLBACK;", 0, 0, &errMsg);
-    sqlite3_finalize(stmt);
+    //sqlite3_finalize(stmt);
+    sqlite3_free(errMsg);
     return rc;
   }
 

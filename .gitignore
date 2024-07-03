@@ -22,8 +22,9 @@
 #*.c
 
 # Ignore configuration files that might contain sensitive information
-/config/*.json
+/config/*.yaml
 *.json
+*.yaml
 
 # Ignore OS generated files
 .DS_Store

@@ -5,9 +5,17 @@ project(LoginManager)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address -fno-omit-frame-pointer -g")
 
+# Find yaml-cpp package
+find_package(yaml-cpp REQUIRED)
+
 # Include directories
 include_directories(include)
 include_directories(sqlite3)
+include_directories(/usr/local/include)
+
+# Print diagnostic messages
+message(STATUS "YAML_CPP_INCLUDE_DIRS: ${YAML_CPP_INCLUDE_DIRS}")
+message(STATUS "YAML_CPP_LIBRARIES: ${YAML_CPP_LIBRARIES}")
 
 # Source files
 set(SOURCES
@@ -20,10 +28,17 @@ set(SOURCES
 # Create a library from the source files
 add_library(login_manager_lib ${SOURCES})
 
+# Link the library with yaml-cpp
+target_link_libraries(login_manager_lib /usr/local/lib/libyaml-cpp.dylib)
+
 # Executable
 add_executable(login_manager src/main.cpp)
+
 # Link the main executable with the library
-target_link_libraries(login_manager login_manager_lib)
+target_link_libraries(login_manager login_manager_lib /usr/local/lib/libyaml-cpp.dylib)
+
+# Link the main executable with the library
+# target_link_libraries(login_manager login_manager_lib)
 
 # Unit tests
 enable_testing()
