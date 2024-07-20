@@ -8,7 +8,7 @@
 class LoginManager {
 public:
   LoginManager(const std::string& dbFile);
-  bool login(const std::string& username, const std::string& password);
+  int login(const std::string& username, const std::string& password);
   bool addLogin(const std::string& username, const std::string& password);
   bool delLogin(const std::string& username, const std::string& password);
 private:

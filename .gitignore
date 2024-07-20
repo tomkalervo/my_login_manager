@@ -26,6 +26,9 @@
 *.json
 *.yaml
 
+# Ignore working documents
+docs/
+
 # Ignore OS generated files
 .DS_Store
 Thumbs.db
@@ -35,6 +38,9 @@ CMakeFiles/
 CMakeCache.txt
 cmake_install.cmake
 Makefile
+.cache/
+CTestTestfile.cmake
+DartConfiguration.tcl
 
 # Ignore generated project files
 *.vcxproj

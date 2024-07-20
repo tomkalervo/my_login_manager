@@ -24,6 +24,7 @@ set(SOURCES
     src/hash_password.cpp
     src/sanitizer.cpp
     sqlite3/sqlite3.c
+    src/udp_server.cpp
   )
 # Create a library from the source files
 add_library(login_manager_lib ${SOURCES})
@@ -33,6 +34,7 @@ target_link_libraries(login_manager_lib /usr/local/lib/libyaml-cpp.dylib)
 
 # Executable
 add_executable(login_manager src/main.cpp)
+add_executable(upd_server src/udp_server.cpp)
 
 # Link the main executable with the library
 target_link_libraries(login_manager login_manager_lib /usr/local/lib/libyaml-cpp.dylib)
