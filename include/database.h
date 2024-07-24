@@ -3,6 +3,7 @@
 
 #include <sqlite3.h>
 #include <string>
+using std::string;
 #define SALT_SIZE 10
 #define PASSWORD_SIZE 65
 
@@ -12,9 +13,9 @@ public:
   ~Database();
   bool getUserPassword(const char *secid, char *password);
   bool getUserSalt(const char *secid, char *salt);
-  bool addUser(const char *secid, const char *password, const char *salt);
-  int deleteUser(const std::string &secid, const std::string &password);
-  int checkPassword(const std::string &secid, const std::string &password);
+  int addUser(const string &secid, const string &password, const string &salt);
+  int deleteUser(const string &secid, const string &password);
+  int checkPassword(const string &secid, const string &password);
 
 private:
   sqlite3 *db;
@@ -22,6 +23,8 @@ private:
   sqlite3_stmt *select_id_stmt;
   sqlite3_stmt *delete_login_stmt;
   sqlite3_stmt *delete_password_stmt;
+  sqlite3_stmt *add_login_stmt;
+  sqlite3_stmt *add_password_stmt;
   bool selectText(const char *sql, const char *value, char *result,
                   const int size);
 };

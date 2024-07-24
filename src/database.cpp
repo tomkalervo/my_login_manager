@@ -49,6 +49,25 @@ Database::Database(const char *dbFile) {
                 << sqlite3_errmsg(db) << std::endl;
       delete_password_stmt = nullptr;
     }
+
+    zSql = u8"INSERT INTO login (secid, salt) VALUES (:secid, :salt);";
+
+    if (sqlite3_prepare_v2(db, zSql.c_str(), zSql.length(), &add_login_stmt,
+                           nullptr)) {
+      std::cerr << "Can't prepare statement for insert of login data: "
+                << sqlite3_errmsg(db) << std::endl;
+      add_login_stmt = nullptr;
+    }
+
+    zSql = u8"INSERT INTO password (login_id, password) VALUES (:login_id, "
+           u8":password);";
+
+    if (sqlite3_prepare_v2(db, zSql.c_str(), zSql.length(), &add_password_stmt,
+                           nullptr)) {
+      std::cerr << "Can't prepare statement for insert of password data: "
+                << sqlite3_errmsg(db) << std::endl;
+      add_password_stmt = nullptr;
+    }
   }
 }
 
@@ -113,6 +132,14 @@ int Database::checkPassword(const std::string &secid,
 
 int Database::deleteUser(const std::string &secid,
                          const std::string &password) {
+  /*
+   * INPUT: secid and password for the user to be deleted.
+   * RETURN: Integer value. 0-200 represent sqlite3 return codes, 500 is
+   * internal server error. Function utilize the global instance statements
+   * select_id_stmt, delete_login_stmt and delete_password_stmt. New parameters
+   * provided to the function are binded to these statements. The statements are
+   * reset upon function completion.
+   */
   if (!select_id_stmt) {
     std::cerr << "Error select_id_stmt not initialized" << std::endl;
     return 500;
@@ -184,16 +211,14 @@ int Database::deleteUser(const std::string &secid,
   }
 
   rc = sqlite3_step(delete_login_stmt);
+  sqlite3_reset(delete_login_stmt);
   if (rc != SQLITE_DONE) {
     std::cerr << "SQL error at delete_login_stmt: " << sqlite3_errmsg(db)
               << std::endl;
     sqlite3_exec(db, "ROLLBACK;", 0, 0, &errMsg);
     sqlite3_free(errMsg);
-    sqlite3_reset(delete_login_stmt);
     return rc;
   }
-
-  sqlite3_reset(delete_login_stmt);
 
   // Delete from table password
   rc = sqlite3_bind_int(
@@ -209,16 +234,14 @@ int Database::deleteUser(const std::string &secid,
   }
 
   rc = sqlite3_step(delete_password_stmt);
+  sqlite3_reset(delete_password_stmt);
   if (rc != SQLITE_DONE) {
     std::cerr << "SQL error at delete_password_stmt: " << sqlite3_errmsg(db)
               << std::endl;
     sqlite3_exec(db, "ROLLBACK;", 0, 0, &errMsg);
     sqlite3_free(errMsg);
-    sqlite3_reset(delete_password_stmt);
     return rc;
   }
-
-  sqlite3_reset(delete_password_stmt);
 
   rc = sqlite3_exec(db, "COMMIT;", 0, 0, &errMsg);
   if (rc != SQLITE_OK) {
@@ -230,75 +253,103 @@ int Database::deleteUser(const std::string &secid,
   return rc;
 }
 
-bool Database::addUser(const char *secid, const char *password,
-                       const char *salt) {
+int Database::addUser(const string &secid, const string &password,
+                      const string &salt) {
+  /*
+   * INPUT: secid, password and generated salt for the user to be added.
+   * RETURN: Integer value. 0-200 represent sqlite3 return codes, 500 is
+   * internal server error.
+   */
+  if (!add_login_stmt) {
+    std::cerr << "Error add_login_stmt not initialized" << std::endl;
+    return 500;
+  }
+
+  if (!add_password_stmt) {
+    std::cerr << "Error add_password_stmt not initialized" << std::endl;
+    return 500;
+  }
+
+  int rc = sqlite3_bind_text(
+      add_login_stmt, sqlite3_bind_parameter_index(add_login_stmt, ":secid"),
+      secid.c_str(), secid.length(), SQLITE_TRANSIENT);
+  if (rc != SQLITE_OK) {
+    std::cerr << "Error bind secid statement: " << sqlite3_errmsg(db)
+              << ", rc: " << rc << std::endl;
+    sqlite3_reset(add_login_stmt);
+    return rc;
+  }
+
+  rc = sqlite3_bind_text(add_login_stmt,
+                         sqlite3_bind_parameter_index(add_login_stmt, ":salt"),
+                         salt.c_str(), salt.length(), SQLITE_TRANSIENT);
+  if (rc != SQLITE_OK) {
+    std::cerr << "Error bind salt statement: " << sqlite3_errmsg(db)
+              << ", rc: " << rc << std::endl;
+    sqlite3_reset(add_login_stmt);
+    return rc;
+  }
   char *errMsg = nullptr;
-  int rc = sqlite3_exec(db, "BEGIN TRANSACTION;", 0, 0, &errMsg);
+  rc = sqlite3_exec(db, "BEGIN IMMEDIATE TRANSACTION;", 0, 0, &errMsg);
   if (rc != SQLITE_OK) {
-    std::cerr << "SQL error: " << errMsg << std::endl;
+    std::cerr << "SQL error at begin immediate: " << errMsg << std::endl;
     sqlite3_free(errMsg);
+    sqlite3_reset(add_login_stmt);
     return rc;
   }
 
-  const char *insert_login_query =
-      u8"INSERT INTO login (secid,salt) VALUES (?, ?);";
-  sqlite3_stmt *stmt;
-  rc = sqlite3_prepare_v2(db, insert_login_query, -1, &stmt, 0);
-  if (rc != SQLITE_OK) {
-    std::cerr << "SQL error: " << sqlite3_errmsg(db) << std::endl;
-    sqlite3_free(errMsg);
-    return rc;
-  }
-
-  sqlite3_bind_text(stmt, 1, secid, -1, SQLITE_STATIC);
-  sqlite3_bind_text(stmt, 2, salt, -1, SQLITE_STATIC);
-
-  rc = sqlite3_step(stmt);
+  rc = sqlite3_step(add_login_stmt);
+  sqlite3_reset(add_login_stmt);
   if (rc != SQLITE_DONE) {
-    std::cerr << "SQL error at insert query: " << sqlite3_errmsg(db)
-              << ", secid: " << secid << std::endl;
+    std::cerr << "SQL error at add_login_stmt: " << sqlite3_errmsg(db)
+              << std::endl;
     sqlite3_exec(db, "ROLLBACK;", 0, 0, &errMsg);
-    sqlite3_finalize(stmt);
     sqlite3_free(errMsg);
     return rc;
   }
 
-  sqlite3_finalize(stmt);
-
+  // Bind password statement
   sqlite3_int64 login_id = sqlite3_last_insert_rowid(db);
-  const char *insert_password_query =
-      "INSERT INTO password (login_id, password) VALUES (?, ?);";
-  rc = sqlite3_prepare_v2(db, insert_password_query, -1, &stmt, 0);
+
+  rc = sqlite3_bind_int64(
+      add_password_stmt,
+      sqlite3_bind_parameter_index(add_password_stmt, ":login_id"), login_id);
   if (rc != SQLITE_OK) {
-    std::cerr << "SQL error: " << sqlite3_errmsg(db) << std::endl;
-    sqlite3_exec(db, "ROLLBACK;", 0, 0, &errMsg);
-    sqlite3_free(errMsg);
+    std::cerr << "Error bind password statement: " << sqlite3_errmsg(db)
+              << ", rc: " << rc << std::endl;
+    sqlite3_reset(add_password_stmt);
     return rc;
   }
 
-  sqlite3_bind_int64(stmt, 1, login_id);
-  sqlite3_bind_text(stmt, 2, password, -1, SQLITE_STATIC);
+  rc = sqlite3_bind_text(
+      add_password_stmt,
+      sqlite3_bind_parameter_index(add_password_stmt, ":password"),
+      password.c_str(), password.length(), SQLITE_TRANSIENT);
+  if (rc != SQLITE_OK) {
+    std::cerr << "Error bind password statement: " << sqlite3_errmsg(db)
+              << ", rc: " << rc << std::endl;
+    sqlite3_reset(add_password_stmt);
+    return rc;
+  }
 
-  rc = sqlite3_step(stmt);
+  rc = sqlite3_step(add_password_stmt);
+  sqlite3_reset(add_password_stmt);
   if (rc != SQLITE_DONE) {
-    std::cerr << "SQL error: " << sqlite3_errmsg(db) << std::endl;
+    std::cerr << "SQL error at add_password_stmt: " << sqlite3_errmsg(db)
+              << std::endl;
     sqlite3_exec(db, "ROLLBACK;", 0, 0, &errMsg);
-    // sqlite3_finalize(stmt);
     sqlite3_free(errMsg);
     return rc;
   }
-
-  sqlite3_finalize(stmt);
 
   rc = sqlite3_exec(db, "COMMIT;", 0, 0, &errMsg);
   if (rc != SQLITE_OK) {
-    std::cerr << "SQL error: " << errMsg << std::endl;
+    std::cerr << "SQL error at commit: " << errMsg << std::endl;
     sqlite3_exec(db, "ROLLBACK;", 0, 0, &errMsg);
     sqlite3_free(errMsg);
-    return rc;
   }
 
-  return true;
+  return rc;
 }
 
 bool Database::getUserPassword(const char *secid, char *password) {

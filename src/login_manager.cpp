@@ -34,7 +34,7 @@ bool LoginManager::addLogin(const std::string &username,
     return false;
   }
 
-  if (db.addUser(username.c_str(), hashedPassword.c_str(), d_salt.c_str())) {
+  if (db.addUser(username, hashedPassword, d_salt) == 0) {
     return true;
   }
   return false;
