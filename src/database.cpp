@@ -84,6 +84,12 @@ Database::~Database() {
   if (delete_password_stmt) {
     sqlite3_finalize(delete_password_stmt);
   }
+  if (add_login_stmt) {
+    sqlite3_finalize(add_login_stmt);
+  }
+  if (add_password_stmt) {
+    sqlite3_finalize(add_password_stmt);
+  }
   if (db) {
     sqlite3_close(db);
   }
