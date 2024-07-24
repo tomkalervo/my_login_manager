@@ -64,12 +64,7 @@ bool LoginManager::getHashedPassword(const std::string &usid,
   return !hashed_pw.empty();
 }
 bool LoginManager::getSalt(const std::string &username, std::string &salt) {
-  char storedSalt[SALT_SIZE];
-  if (db.getUserSalt(username.c_str(), storedSalt)) {
-    salt = storedSalt;
-    return true;
-  }
-  return false;
+  return (db.getUserSalt(username, salt) == 0);
 }
 void LoginManager::genSalt(std::string &salt) { salt = "56"; }
 void LoginManager::hash(const std::string &input, std::string &output) {

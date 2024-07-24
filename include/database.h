@@ -11,8 +11,8 @@ class Database {
 public:
   Database(const char *dbFile);
   ~Database();
-  bool getUserPassword(const char *secid, char *password);
-  bool getUserSalt(const char *secid, char *salt);
+  int getUserPassword(const string &secid, string &password);
+  int getUserSalt(const string &secid, string &salt);
   int addUser(const string &secid, const string &password, const string &salt);
   int deleteUser(const string &secid, const string &password);
   int checkPassword(const string &secid, const string &password);
@@ -25,8 +25,8 @@ private:
   sqlite3_stmt *delete_password_stmt;
   sqlite3_stmt *add_login_stmt;
   sqlite3_stmt *add_password_stmt;
-  bool selectText(const char *sql, const char *value, char *result,
-                  const int size);
+  sqlite3_stmt *get_password_stmt;
+  sqlite3_stmt *get_salt_stmt;
 };
 
 #endif // DATABASE_H

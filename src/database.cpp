@@ -1,3 +1,21 @@
+/*
+ * Written by Tom Karlsson.
+ * 2024-07-20
+ *
+ * Database object that supports the following operations:
+ * Insert new user into database,
+ * Delete existing user from database,
+ * Check if valid user (secid & password),
+ * Get salt associated to existing user,
+ * Get password associated to existing user.
+ *
+ * SQLite supports prepared statements. These statements are compiled into
+ * SQLite byte code. This Database object creates and compiles these statments
+ * at initatilzation. They are then reused at each transatction to the database
+ * - without the need to recompile the byte code.
+ *
+ */
+
 #include "database.h"
 #include <cstddef>
 #include <iostream>
@@ -68,6 +86,26 @@ Database::Database(const char *dbFile) {
                 << sqlite3_errmsg(db) << std::endl;
       add_password_stmt = nullptr;
     }
+
+    zSql = u8"SELECT p.password FROM login l "
+           u8"INNER JOIN password p on l.id = p.login_id "
+           u8"WHERE l.secid = :secid;";
+
+    if (sqlite3_prepare_v2(db, zSql.c_str(), zSql.length(), &get_password_stmt,
+                           nullptr)) {
+      std::cerr << "Can't prepare statement for select of password: "
+                << sqlite3_errmsg(db) << std::endl;
+      get_password_stmt = nullptr;
+    }
+
+    zSql = u8"SELECT salt FROM login WHERE secid = :secid ;";
+
+    if (sqlite3_prepare_v2(db, zSql.c_str(), zSql.length(), &get_salt_stmt,
+                           nullptr)) {
+      std::cerr << "Can't prepare statement for select of salt: "
+                << sqlite3_errmsg(db) << std::endl;
+      get_salt_stmt = nullptr;
+    }
   }
 }
 
@@ -89,6 +127,12 @@ Database::~Database() {
   }
   if (add_password_stmt) {
     sqlite3_finalize(add_password_stmt);
+  }
+  if (get_password_stmt) {
+    sqlite3_finalize(get_password_stmt);
+  }
+  if (get_salt_stmt) {
+    sqlite3_finalize(get_salt_stmt);
   }
   if (db) {
     sqlite3_close(db);
@@ -358,47 +402,63 @@ int Database::addUser(const string &secid, const string &password,
   return rc;
 }
 
-bool Database::getUserPassword(const char *secid, char *password) {
-  const char *query = "SELECT p.password "
-                      "FROM login l INNER JOIN password p ON l.id = p.login_id "
-                      "WHERE l.secid = ? ;";
-  return selectText(query, secid, password, PASSWORD_SIZE);
+int Database::getUserSalt(const string &secid, string &salt) {
+  if (!get_salt_stmt) {
+    std::cerr << "Error get_salt_stmt not initialized" << std::endl;
+    return 500;
+  }
+
+  int rc = sqlite3_bind_text(
+      get_salt_stmt, sqlite3_bind_parameter_index(get_salt_stmt, ":secid"),
+      secid.c_str(), secid.length(), SQLITE_TRANSIENT);
+  if (rc != SQLITE_OK) {
+    std::cerr << "Error bind secid statement: " << sqlite3_errmsg(db)
+              << ", rc: " << rc << std::endl;
+    sqlite3_reset(get_salt_stmt);
+    return rc;
+  }
+  rc = sqlite3_step(get_salt_stmt);
+  if (rc != SQLITE_ROW) {
+    std::cerr << "SQL Error, unsuccesful select of salt: " << sqlite3_errmsg(db)
+              << ", rc: " << rc << std::endl;
+    sqlite3_reset(get_salt_stmt);
+    return rc;
+  }
+  const unsigned char *text = sqlite3_column_text(get_salt_stmt, 0);
+  if (text) {
+    salt.assign(reinterpret_cast<const char *>(text));
+  }
+  sqlite3_reset(get_salt_stmt);
+  return SQLITE_OK;
 }
 
-bool Database::getUserSalt(const char *secid, char *salt) {
-  const char *query = "SELECT salt FROM login WHERE secid = ? ;";
-  return selectText(query, secid, salt, SALT_SIZE);
-}
-
-bool Database::selectText(const char *sql, const char *value, char *result,
-                          const int size) {
-  sqlite3_stmt *stmt;
-  bool success = false;
-
-  if (sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr) != SQLITE_OK) {
-    std::cerr << "Error preparing SQL statement: " << sqlite3_errmsg(db)
-              << std::endl;
-    return false;
+int Database::getUserPassword(const string &secid, string &password) {
+  if (!get_password_stmt) {
+    std::cerr << "Error get_password_stmt not initialized" << std::endl;
+    return 500;
   }
 
-  if (sqlite3_bind_text(stmt, 1, value, -1, SQLITE_STATIC) != SQLITE_OK) {
-    std::cerr << "Error binding value to parameter: " << sqlite3_errmsg(db)
-              << std::endl;
-    sqlite3_finalize(stmt);
-    return false;
+  int rc = sqlite3_bind_text(
+      get_password_stmt,
+      sqlite3_bind_parameter_index(get_password_stmt, ":secid"), secid.c_str(),
+      secid.length(), SQLITE_TRANSIENT);
+  if (rc != SQLITE_OK) {
+    std::cerr << "Error bind secid statement: " << sqlite3_errmsg(db)
+              << ", rc: " << rc << std::endl;
+    sqlite3_reset(get_password_stmt);
+    return rc;
   }
-
-  if (sqlite3_step(stmt) == SQLITE_ROW) {
-    const unsigned char *text = sqlite3_column_text(stmt, 0);
-    if (text) {
-      int length = strlen(reinterpret_cast<const char *>(text));
-      int actual_length = std::min(length, size - 1);
-      strncpy(result, reinterpret_cast<const char *>(text), actual_length);
-      result[actual_length] = '\0';
-      success = true;
-    }
+  rc = sqlite3_step(get_password_stmt);
+  if (rc != SQLITE_ROW) {
+    std::cerr << "SQL Error, unsuccesful select of password: "
+              << sqlite3_errmsg(db) << ", rc: " << rc << std::endl;
+    sqlite3_reset(get_password_stmt);
+    return rc;
   }
-
-  sqlite3_finalize(stmt);
-  return success;
+  const unsigned char *text = sqlite3_column_text(get_password_stmt, 0);
+  if (text) {
+    password.assign(reinterpret_cast<const char *>(text));
+  }
+  sqlite3_reset(get_password_stmt);
+  return SQLITE_OK;
 }
