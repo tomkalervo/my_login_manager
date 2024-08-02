@@ -1,8 +1,13 @@
 #include "login_manager.h"
+#include "database.h"
+#include "hash_password.h"
+#include "udp_server.h"
 #include <iostream>
 
 const std::string LoginManager::s_salt = "42";
 LoginManager::LoginManager(const std::string &dbFile) : db(dbFile.c_str()) {}
+
+void LoginManager::startAPI() { udpServer::listen(*this); }
 
 int LoginManager::login(const std::string &username,
                         const std::string &password) {
@@ -12,10 +17,12 @@ int LoginManager::login(const std::string &username,
     return -1;
   }
   int rc = db.checkPassword(username, hash_pw);
-  if (rc <= 0) {
-    return 0 - rc;
+  if (rc == SQLITE_NOTFOUND) {
+    return 0;
+  } else if (rc == SQLITE_OK) {
+    return 1;
   } else {
-    std::cerr << "Error checking password in database" << std::endl;
+    std::cerr << "Error checking password in database, rc: " << rc << std::endl;
     return -1;
   }
 }

@@ -19,12 +19,14 @@
 #include "database.h"
 #include <cstddef>
 #include <iostream>
+#include <ostream>
 
 Database::Database(const char *dbFile) {
   if (sqlite3_open(dbFile, &db)) {
     std::cerr << "Can't open database: " << sqlite3_errmsg(db) << std::endl;
     db = nullptr;
   }
+
   if (db) {
     // Prepare satement for checking password
     std::string zSql = u8"SELECT count(*) FROM login lg "
@@ -177,7 +179,13 @@ int Database::checkPassword(const std::string &secid,
   int exists = sqlite3_column_int(check_password_stmt, 0);
   sqlite3_reset(check_password_stmt);
 
-  return 0 - exists;
+  if (exists == 0) {
+    return SQLITE_NOTFOUND;
+  } else if (exists == 1) {
+    return SQLITE_OK;
+  } else {
+    return SQLITE_ERROR;
+  }
 }
 
 int Database::deleteUser(const std::string &secid,
@@ -186,9 +194,9 @@ int Database::deleteUser(const std::string &secid,
    * INPUT: secid and password for the user to be deleted.
    * RETURN: Integer value. 0-200 represent sqlite3 return codes, 500 is
    * internal server error. Function utilize the global instance statements
-   * select_id_stmt, delete_login_stmt and delete_password_stmt. New parameters
-   * provided to the function are binded to these statements. The statements are
-   * reset upon function completion.
+   * select_id_stmt, delete_login_stmt and delete_password_stmt. New
+   * parameters provided to the function are binded to these statements. The
+   * statements are reset upon function completion.
    */
   if (!select_id_stmt) {
     std::cerr << "Error select_id_stmt not initialized" << std::endl;

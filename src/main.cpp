@@ -1,22 +1,23 @@
 #include "login_manager.h"
 #include <iostream>
-#include <string> // Include the necessary header for std::string
+#include <ostream>
+#include <string>
 #include <yaml-cpp/yaml.h>
 
-int main(int argv, char** argc) {
+int main(int argv, char **argc) {
   if (argv != 2) {
     std::cout << "Usage: ./login_manager path_to_login_database" << std::endl;
     return 1;
   }
-  
+
   YAML::Node config = YAML::LoadFile(argc[1]);
   std::string db_path = config["database"]["path"].as<std::string>();
   std::cout << "Path: " << db_path << std::endl;
 
   LoginManager loginManager(db_path);
   std::string command;
-  while (command != "q"){
-    std::cout << "Enter command {l | a | q}: ";
+  while (command != "q") {
+    std::cout << "Enter command {l | a | s| q}: ";
     std::cin >> command;
     if (command == "l") {
       std::string username, password;
@@ -28,12 +29,12 @@ int main(int argv, char** argc) {
       std::cin >> password;
 
       if (loginManager.login(username, password)) {
-          std::cout << "Login successful!" << std::endl;
+        std::cout << "Login successful!" << std::endl;
       } else {
-          std::cout << "Login failed!" << std::endl;
+        std::cout << "Login failed!" << std::endl;
       }
     }
-    
+
     if (command == "a") {
       std::string username, password;
 
@@ -44,12 +45,16 @@ int main(int argv, char** argc) {
       std::cin >> password;
 
       if (loginManager.addLogin(username, password)) {
-          std::cout << "Add login successful!" << std::endl;
+        std::cout << "Add login successful!" << std::endl;
       } else {
-          std::cout << "Add login failed!" << std::endl;
+        std::cout << "Add login failed!" << std::endl;
       }
+    }
+
+    if (command == "s") {
+      std::cout << "Start server." << std::endl;
+      loginManager.startAPI();
     }
   }
   return 0;
 }
-

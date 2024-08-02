@@ -34,7 +34,6 @@ target_link_libraries(login_manager_lib /usr/local/lib/libyaml-cpp.dylib)
 
 # Executable
 add_executable(login_manager src/main.cpp)
-add_executable(upd_server src/udp_server.cpp)
 
 # Link the main executable with the library
 target_link_libraries(login_manager login_manager_lib /usr/local/lib/libyaml-cpp.dylib)
