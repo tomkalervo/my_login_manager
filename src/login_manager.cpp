@@ -7,7 +7,16 @@
 const std::string LoginManager::s_salt = "42";
 LoginManager::LoginManager(const std::string &dbFile) : db(dbFile.c_str()) {}
 
-void LoginManager::startAPI() { udpServer::listen(*this); }
+void LoginManager::startAPI() { api_status = udpServer::run(*this); }
+void LoginManager::stopAPI() {
+  int rc = udpServer::stop(api_status);
+  if (rc) {
+    std::cerr << "Server closed successfully." << std::endl;
+  } else {
+
+    std::cerr << "Server failed to close." << std::endl;
+  }
+}
 
 int LoginManager::login(const std::string &username,
                         const std::string &password) {

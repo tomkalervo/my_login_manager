@@ -58,4 +58,8 @@ add_test(NAME TestHashPassword COMMAND test_hash_password)
 add_executable(test_sanitizer tests/test_sanitizer.cpp)
 target_link_libraries(test_sanitizer login_manager_lib)
 add_test(NAME TestSanitizer COMMAND test_sanitizer)
+# Test API
+add_executable(test_api tests/test_api.cpp)
+target_link_libraries(test_api login_manager_lib)
+add_test(NAME TestAPI COMMAND test_api)
 

@@ -8,6 +8,7 @@ class LoginManager {
 public:
   LoginManager(const std::string &dbFile);
   void startAPI();
+  void stopAPI();
   int login(const std::string &username, const std::string &password);
   bool addLogin(const std::string &username, const std::string &password);
   bool delLogin(const std::string &username, const std::string &password);
@@ -15,6 +16,7 @@ public:
 private:
   Database db;
   static const std::string s_salt;
+  void *api_status;
   bool getHashedPassword(const std::string &usid, const std::string &pw,
                          std::string &hashed_pw);
   bool getSalt(const std::string &username, std::string &salt);
