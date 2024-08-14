@@ -31,7 +31,7 @@
  * 1 : Login with e-mail(e-mail {string utf8}, password {string utf8})
  * 2 : Login with username, TODO
  * 3 : Add user(e-mail {string utf8}, password {string utf8})
- * 4 : Delete user with e-mail(e-mail {string utf8})
+ * 4 : Delete user with e-mail(e-mail {string utf8}, password {string utf8})
  * 5 : Delete user with username, TODO
  * Return codes.
  * bit 1: represents api communication {0 = OK | 1 = not OK}
@@ -39,8 +39,8 @@
  * [0]+[000 0000] : Server ok, operation success
  * [0]+[000 0001] : Server ok, operation failure
  * [1]+[111 1111] : Server error, check log
- * [1]+[110 0000] : API error, invalid operation code
- * [1]+[101 0000] : API error, invalid parameter
+ * [1]+[010 0000] : API error, invalid operation code
+ * [1]+[001 0000] : API error, invalid parameter
  */
 enum RC_API_OK { TRANS_SUCCESS = 0b0, TRANS_FAILURE = 0b1, TRANS_ERROR = 0b10 };
 enum RC_API_ER {
@@ -49,11 +49,45 @@ enum RC_API_ER {
   PARAMETER_ER = 0b1001 << 4
 };
 int udpServer::getIntVal(const char *msg, const int size) {
+  // Presumes little-endian order.
   int val = 0;
   for (int i = 0; i < size; i++) {
-    val |= (unsigned short)msg[i] << (sizeof(short) * (size - i - 1));
+    val |= (unsigned char)msg[i] << (i * sizeof(unsigned char));
   }
   return val;
+}
+int udpServer::opDel(Operation &op) {
+  // Username at first parameter
+  if (op.idx + 2 >= MAXLINE) {
+    return PARAMETER_ER;
+  }
+  int len = getIntVal(&op.msg[op.idx], 2);
+  op.idx += 2;
+  if (op.idx + len >= MAXLINE) {
+    return PARAMETER_ER;
+  }
+  string uname = string(&op.msg[op.idx], len);
+  op.idx += uname.length();
+  // Password at second  parameter
+  if (op.idx + 2 >= MAXLINE) {
+    return PARAMETER_ER;
+  }
+  len = getIntVal(&op.msg[op.idx], 2);
+  op.idx += 2;
+  if (op.idx + len >= MAXLINE) {
+    return PARAMETER_ER;
+  }
+  string passw = string(&op.msg[op.idx], len);
+  op.idx += passw.length();
+  // Run login procedure
+  int rc = op.lm.delLogin(uname, passw);
+  if (rc == 0) {
+    return TRANS_SUCCESS;
+  } else if (rc > 0) {
+    return TRANS_FAILURE;
+  } else {
+    return TRANS_ERROR;
+  }
 }
 int udpServer::opAdd(Operation &op) {
   // Username at first parameter
@@ -78,15 +112,14 @@ int udpServer::opAdd(Operation &op) {
   }
   string passw = string(&op.msg[op.idx], len);
   op.idx += passw.length();
-  std::cerr << "Username : " << uname << ", Password : " << passw << std::endl;
   // Run login procedure
-  switch (op.lm.login(uname, passw)) {
-  case 0:
-    return TRANS_FAILURE;
-  case 1:
+  int rc = op.lm.addLogin(uname, passw);
+  if (rc == 0) {
     return TRANS_SUCCESS;
-  default:
+  } else if (rc > 0) {
     return TRANS_FAILURE;
+  } else {
+    return TRANS_ERROR;
   }
 }
 int udpServer::opLogin(Operation &op) {
@@ -113,14 +146,13 @@ int udpServer::opLogin(Operation &op) {
   string passw = string(&op.msg[op.idx], len);
   op.idx += passw.length();
   // Run login procedure
-  std::cerr << "Username : " << uname << ", Password : " << passw << std::endl;
-  switch (op.lm.login(uname, passw)) {
-  case 0:
-    return TRANS_FAILURE;
-  case 1:
+  int rc = op.lm.login(uname, passw);
+  if (rc == 0) {
     return TRANS_SUCCESS;
-  default:
+  } else if (rc > 0) {
     return TRANS_FAILURE;
+  } else {
+    return TRANS_ERROR;
   }
 }
 
@@ -132,21 +164,20 @@ int udpServer::process_msg(Operation &op) {
   case 1:
     return opLogin(op);
   case 3:
-    return ~0b1;
+    return opAdd(op);
   case 4:
-    return ~0b1;
+    return opDel(op);
   default:
-    std::cerr << "Bad op: " << (unsigned short)op.msg[op.idx - 1] << std::endl;
-    return (0b1 << 7) | 0b1;
+    return OP_CODE_ER;
   }
 }
 
 // this function is operated async and must handle memory allocated
 void udpServer::handle_client(Operation *op, const int sockfd) {
   int rc = process_msg(*op);
-  std::cerr << "Debug - RC Value: " << rc << std::endl;
-  std::cerr << "Debug - RC Hex Value: 0x" << std::hex << rc << std::dec
-            << std::endl;
+  // std::cerr << "Debug - RC Value: " << rc << std::endl;
+  // std::cerr << "Debug - RC Hex Value: 0x" << std::hex << rc << std::dec
+  //          << std::endl;
   sendto(sockfd, (const char *)&rc, sizeof(int), 0, op->cliaddr, op->addr_len);
   delete op;
 }

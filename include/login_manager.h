@@ -10,8 +10,8 @@ public:
   void startAPI();
   void stopAPI();
   int login(const std::string &username, const std::string &password);
-  bool addLogin(const std::string &username, const std::string &password);
-  bool delLogin(const std::string &username, const std::string &password);
+  int addLogin(const std::string &username, const std::string &password);
+  int delLogin(const std::string &username, const std::string &password);
 
 private:
   Database db;

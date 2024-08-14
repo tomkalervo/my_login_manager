@@ -25,48 +25,31 @@ int LoginManager::login(const std::string &username,
     std::cerr << "Error getting hashed password" << std::endl;
     return -1;
   }
-  int rc = db.checkPassword(username, hash_pw);
-  if (rc == SQLITE_NOTFOUND) {
-    return 0;
-  } else if (rc == SQLITE_OK) {
-    return 1;
-  } else {
-    std::cerr << "Error checking password in database, rc: " << rc << std::endl;
-    return -1;
-  }
+  return db.checkPassword(username, hash_pw);
 }
 
-bool LoginManager::addLogin(const std::string &username,
-                            const std::string &password) {
+int LoginManager::addLogin(const std::string &username,
+                           const std::string &password) {
   std::string d_salt;
   genSalt(d_salt);
   if (d_salt.empty()) {
-    return false;
+    return -1;
   }
 
   std::string hashedPassword =
       HashPassword::usingSHA256(s_salt + password + d_salt);
   if (hashedPassword.empty()) {
-    return false;
+    return -2;
   }
-
-  if (db.addUser(username, hashedPassword, d_salt) == 0) {
-    return true;
-  }
-  return false;
+  return db.addUser(username, hashedPassword, d_salt);
 }
-
-bool LoginManager::delLogin(const std::string &username,
-                            const std::string &password) {
+int LoginManager::delLogin(const std::string &username,
+                           const std::string &password) {
   std::string hash_pw;
   if (!getHashedPassword(username, password, hash_pw)) {
-    return false;
+    return -1;
   }
-
-  if (db.deleteUser(username, hash_pw) == 0) {
-    return true;
-  }
-  return false;
+  return db.deleteUser(username, hash_pw);
 }
 
 bool LoginManager::getHashedPassword(const std::string &usid,
