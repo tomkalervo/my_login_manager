@@ -15,9 +15,15 @@ int main(int argv, char **argc) {
   std::cout << "Path: " << db_path << std::endl;
 
   LoginManager loginManager(db_path);
+  bool server_running = false;
   std::string command;
   while (command != "q") {
-    std::cout << "Enter command {l | a | s| q}: ";
+    if (server_running) {
+      std::cout << "Server is running, s will stop.\n";
+    } else {
+      std::cout << "Server is not running, s will start.\n";
+    }
+    std::cout << "Enter command {l | a | s | q | help}: ";
     std::cin >> command;
     if (command == "l") {
       std::string username, password;
@@ -51,10 +57,23 @@ int main(int argv, char **argc) {
       }
     }
 
-    if (command == "s") {
+    if (command == "s" && !server_running) {
       std::cout << "Start server." << std::endl;
       loginManager.startAPI();
+      server_running = true;
+    } else if (command == "s" && server_running) {
+      std::cout << "Stop server." << std::endl;
+      loginManager.stopAPI();
+      server_running = false;
     }
   }
+
+  if (server_running) {
+    std::cout << "Stop server." << std::endl;
+    loginManager.stopAPI();
+    server_running = false;
+  }
+
+  std::cout << "Login Manager Exits." << std::endl;
   return 0;
 }
