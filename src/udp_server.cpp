@@ -307,6 +307,6 @@ int udpServer::stop(void *st) {
   }
 
   close(sockfd);
-  delete(status);
+  delete (status);
   return 1;
 }

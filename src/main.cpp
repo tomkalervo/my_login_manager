@@ -34,7 +34,7 @@ int main(int argv, char **argc) {
       std::cout << "Enter password: ";
       std::cin >> password;
 
-      if (loginManager.login(username, password)) {
+      if (0 == loginManager.login(username, password)) {
         std::cout << "Login successful!" << std::endl;
       } else {
         std::cout << "Login failed!" << std::endl;
@@ -50,7 +50,7 @@ int main(int argv, char **argc) {
       std::cout << "Enter password: ";
       std::cin >> password;
 
-      if (loginManager.addLogin(username, password)) {
+      if (0 == loginManager.addLogin(username, password)) {
         std::cout << "Add login successful!" << std::endl;
       } else {
         std::cout << "Add login failed!" << std::endl;
