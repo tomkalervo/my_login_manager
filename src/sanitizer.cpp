@@ -86,6 +86,7 @@ bool Sanitizer::validateDomainPart(const std::string& domain_part) {
 	}
 	else if (ch == '.') {
 	    start++;
+	    dots++;
             if (domain_part.at(start) == '.'){
 	        return false;
 	    }
@@ -95,31 +96,10 @@ bool Sanitizer::validateDomainPart(const std::string& domain_part) {
 	}
         ch = domain_part.at(start);
     }
-    if (std::isalnum(ch)){
+    if (std::isalnum(ch) && dots > 0){
 	return true;
     }
     else {
 	return false;
     }
-    
-/*    while (end != std::string::npos) {
-        std::string segment = domain_part.substr(start, end - start);
-        // Each segment should consist of alphanumeric characters and hyphens
-        if (segment.empty() || !std::all_of(segment.begin(), segment.end(), [](char c) {
-            return std::isalnum(c) || c == '-';
-        })) {
-            return false;
-        }
-        start = end + 1;
-        end = domain_part.find('.', start);
-    }
-    
-    // Last segment of domain part
-    std::string last_segment = domain_part.substr(start);
-    if (last_segment.empty() || !std::all_of(last_segment.begin(), last_segment.end(), [](char c) {
-        return std::isalnum(c) || c == '-';
-    })) {
-        return false;
-    }
- */   
 }
