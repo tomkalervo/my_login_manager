@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 3.10)
 project(LoginManager)
 
 set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address -fno-omit-frame-pointer -g")
 
 # Find yaml-cpp package
@@ -30,13 +31,14 @@ set(SOURCES
 add_library(login_manager_lib ${SOURCES})
 
 # Link the library with yaml-cpp
-target_link_libraries(login_manager_lib /usr/local/lib/libyaml-cpp.dylib)
+# target_link_libraries(login_manager_lib /usr/local/lib/libyaml-cpp.dylib)
 
 # Executable
 add_executable(login_manager src/main.cpp)
 
 # Link the main executable with the library
-target_link_libraries(login_manager login_manager_lib /usr/local/lib/libyaml-cpp.dylib)
+# target_link_libraries(login_manager login_manager_lib /usr/local/lib/libyaml-cpp.dylib)
+target_link_libraries(login_manager login_manager_lib yaml-cpp) 
 
 # Link the main executable with the library
 # target_link_libraries(login_manager login_manager_lib)

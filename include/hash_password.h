@@ -8,6 +8,8 @@
 #ifndef HASH_PASSWORD
 #define HASH_PASSWORD
 #include <string>
+#include <cstdint>
+#include <vector>
 
 class HashPassword{
 public:

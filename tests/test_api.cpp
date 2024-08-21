@@ -6,10 +6,16 @@
 #include <iostream>
 #include <netinet/in.h>
 #include <string>
-#include <sys/_types/_socklen_t.h>
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <unistd.h>
+
+#ifdef __APPLE__
+#include <sys/_types/_socklen_t.h>
+#else
+#include <atomic>
+#endif
+
 #define PORT 1717
 using std::string;
 std::atomic_bool stop_api_thread = false;

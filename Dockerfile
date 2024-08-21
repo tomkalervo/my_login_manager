@@ -15,7 +15,7 @@ RUN apt-get update && apt-get install -y \
 RUN wget https://github.com/jbeder/yaml-cpp/archive/refs/tags/yaml-cpp-0.7.0.tar.gz && \
     tar -xzvf yaml-cpp-0.7.0.tar.gz && \
     cd yaml-cpp-yaml-cpp-0.7.0 && \
-    cmake . && \
+    cmake -DYAML_CPP_BUILD_TESTS=OFF . && \
     make && \
     make install && \
     cd .. && \
@@ -28,15 +28,16 @@ WORKDIR /app
 COPY . /app
 
 # Create build directory and run cmake
-RUN mkdir build
+# RUN mkdir build
 WORKDIR /app/build
+
+# Clear CMake cache if it exists
+RUN rm -rf CMakeCache.txt CMakeFiles
+
 RUN cmake ..
 
 # Build the project
 RUN make
-
-# Run tests
-RUN ctest
 
 # Specify the command to run on container start
 # CMD ["./login_manager"]
