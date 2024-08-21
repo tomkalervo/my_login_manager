@@ -36,9 +36,16 @@ add_library(login_manager_lib ${SOURCES})
 # Executable
 add_executable(login_manager src/main.cpp)
 
-# Link the main executable with the library
+## Link the main executable with the library
+if(APPLE)
+    # macOS specific linking
+    target_link_libraries(login_manager login_manager_lib /usr/local/lib/libyaml-cpp.dylib)
+elseif(UNIX)
+    # Linux specific linking
+    target_link_libraries(login_manager login_manager_lib yaml-cpp)
+endif()
 # target_link_libraries(login_manager login_manager_lib /usr/local/lib/libyaml-cpp.dylib)
-target_link_libraries(login_manager login_manager_lib yaml-cpp) 
+# target_link_libraries(login_manager login_manager_lib yaml-cpp) 
 
 # Link the main executable with the library
 # target_link_libraries(login_manager login_manager_lib)

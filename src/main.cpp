@@ -6,7 +6,7 @@
 
 int main(int argv, char **argc) {
   if (argv != 2) {
-    std::cout << "Usage: ./login_manager path_to_login_database" << std::endl;
+    std::cout << "Usage: ./login_manager path_to_settings_file" << std::endl;
     return 1;
   }
 
