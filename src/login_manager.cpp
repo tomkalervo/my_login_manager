@@ -3,9 +3,15 @@
 #include "hash_password.h"
 #include "udp_server.h"
 #include <iostream>
+#include <stdexcept>
 
 const std::string LoginManager::s_salt = "42";
-LoginManager::LoginManager(const std::string &dbFile) : db(dbFile.c_str()) {}
+LoginManager::LoginManager(const std::string &dbFile) try : db(dbFile.c_str()) {
+  // no-op, init successul
+} catch (const std::runtime_error &e) {
+  std::cerr << "Failed to initialize database in LoginManager: " << e.what() << std::endl;
+  throw; 	
+}
 
 void LoginManager::startAPI() { api_status = udpServer::run(*this); }
 void LoginManager::stopAPI() {

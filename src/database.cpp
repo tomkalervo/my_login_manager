@@ -20,11 +20,15 @@
 #include <cstddef>
 #include <iostream>
 #include <ostream>
+#include <stdexcept>
 
 Database::Database(const char *dbFile) {
   if (sqlite3_open(dbFile, &db)) {
-    std::cerr << "Can't open database: " << sqlite3_errmsg(db) << std::endl;
+    std::string error_msg = "Can't open database: " + std::string(sqlite3_errmsg(db));
+    //std::cerr << "Can't open database: " << sqlite3_errmsg(db) << std::endl;
+    sqlite3_close(db);
     db = nullptr;
+    throw std::runtime_error(error_msg);
   }
 
   if (db) {
