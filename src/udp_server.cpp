@@ -246,7 +246,7 @@ void *udpServer::run(LoginManager &lm) {
   // Filling server information
   servaddr.sin_family = AF_INET;
   // Only listen to local requests
-  servaddr.sin_addr.s_addr = inet_addr("127.0.0.1");
+  servaddr.sin_addr.s_addr = inet_addr("0.0.0.0");
   servaddr.sin_port = htons(PORT);
 
   // Bind the socket with the server address
