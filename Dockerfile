@@ -2,7 +2,7 @@ FROM ubuntu:22.04
 
 LABEL Description="Build environment for Login Manager"
 LABEL Version="0.1"
-LABEL Maintainer="Tom Karlsson <tom.kg.karlsson(at)gmail.com>"
+LABEL Maintainer="Tom Karlsson <tomkarlsson@bitwise.foo>"
 
 # Install necessary packages (excluding libsqlite3-dev)
 RUN apt-get update && apt-get install -y \
