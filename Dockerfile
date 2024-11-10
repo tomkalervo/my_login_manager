@@ -29,12 +29,13 @@ COPY . .
 
 # Create build directory and run cmake
 RUN mkdir -p build
+RUN cmake -S . -B build
 
 #Add release optimization in the future...
 #RUN cd build && cmake -DCMAKE_BUILD_TYPE=Release ..
 #RUN cd ..
 #Build; compile and link Login Manager
-RUN cmake --build build
+RUN cmake --build build --config Release
 
 # Specify the command to run on container start
 # CMD ["./login_manager"]
