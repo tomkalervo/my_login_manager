@@ -1,0 +1,8 @@
+# Ignore build directory
+build/
+
+# Ignore other temporary or unnecessary files (optional)
+*.log
+*.tmp
+*.swp
+*.bak

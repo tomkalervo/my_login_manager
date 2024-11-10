@@ -4,7 +4,14 @@ project(LoginManager)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address -fno-omit-frame-pointer -g")
+# Conditional sanitizers for macOS vs Linux
+if(APPLE)
+    # macOS: use only AddressSanitizer, as LeakSanitizer is not supported
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address -fno-omit-frame-pointer -g")
+elseif(UNIX)
+    # Linux: use both AddressSanitizer and LeakSanitizer
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address,leak -fno-omit-frame-pointer -g")
+endif()
 
 # Find yaml-cpp package
 find_package(yaml-cpp REQUIRED)
@@ -44,11 +51,6 @@ elseif(UNIX)
     # Linux specific linking
     target_link_libraries(login_manager login_manager_lib yaml-cpp)
 endif()
-# target_link_libraries(login_manager login_manager_lib /usr/local/lib/libyaml-cpp.dylib)
-# target_link_libraries(login_manager login_manager_lib yaml-cpp) 
-
-# Link the main executable with the library
-# target_link_libraries(login_manager login_manager_lib)
 
 # Unit tests
 enable_testing()

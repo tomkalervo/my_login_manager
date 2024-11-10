@@ -25,19 +25,16 @@ RUN wget https://github.com/jbeder/yaml-cpp/archive/refs/tags/yaml-cpp-0.7.0.tar
 WORKDIR /app
 
 # Copy the current directory contents into the container
-COPY . /app
+COPY . .
 
 # Create build directory and run cmake
-# RUN mkdir build
-WORKDIR /app/build
+RUN mkdir -p build
 
-# Clear CMake cache if it exists
-RUN rm -rf CMakeCache.txt CMakeFiles
-
-RUN cmake ..
-
-# Build the project
-RUN make
+#Add release optimization in the future...
+#RUN cd build && cmake -DCMAKE_BUILD_TYPE=Release ..
+#RUN cd ..
+#Build; compile and link Login Manager
+RUN cmake --build build
 
 # Specify the command to run on container start
 # CMD ["./login_manager"]
