@@ -70,16 +70,42 @@ void testLogin() {
     std::cout << "08 Login3 test rc error." << std::endl;
   }
 
-  if (lm.delLogin(login_secid2, login_pw2) == 0) {
-    std::cout << "09 Delete login2 test passed." << std::endl;
+  std::string const login_pw2_changed = "002ChangedPassw";
+  rc = lm.login(login_secid2, login_pw2_changed);
+  if (rc != 0) {
+    std::cout << "09 login2 with unchanged new password test passed."
+              << std::endl;
   } else {
-    std::cout << "09 Delete login2 test failed." << std::endl;
+    std::cout << "09 login2 with unchanged new password test failed."
+              << std::endl;
+  }
+
+  rc = lm.changePassword(login_secid2, login_pw2_changed);
+  if (rc == 0) {
+    std::cout << "10 login2 change new password test passed." << std::endl;
+  } else {
+    std::cout << "10 login2 changed new password test failed." << std::endl;
+  }
+
+  rc = lm.login(login_secid2, login_pw2_changed);
+  if (rc == 0) {
+    std::cout << "11 login2 with changed new password test passed."
+              << std::endl;
+  } else {
+    std::cout << "11 login2 with changed new password test failed."
+              << std::endl;
+  }
+
+  if (lm.delLogin(login_secid2, login_pw2_changed) == 0) {
+    std::cout << "12 Delete login2 test passed." << std::endl;
+  } else {
+    std::cout << "12 Delete login2 test failed." << std::endl;
   }
 
   if (lm.delLogin(login_secid3, login_pw3) == 0) {
-    std::cout << "10 Delete login3 test passed." << std::endl;
+    std::cout << "13 Delete login3 test passed." << std::endl;
   } else {
-    std::cout << "10 Delete login3 test failed." << std::endl;
+    std::cout << "13 Delete login3 test failed." << std::endl;
   }
 }
 

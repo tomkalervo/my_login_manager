@@ -6,81 +6,111 @@
 #include <sstream>
 #include <stdexcept>
 
-const std::string LoginManager::STATIC_SALT = "42";
-LoginManager::LoginManager(const std::string &dbFile) try : db(dbFile.c_str()) {
-  // no-op, init successul
-  // Init Class
+using std::string;
+using LogLevel = Logger::LogLevel;
+using LogOut = Logger::LogOut;
+/*
+ * Initialize LoginManager with the path to the database (login.db)
+ */
+LoginManager::LoginManager(const string &dbFile) try
+    : m_db(dbFile.c_str()), m_log(LogLevel::ERROR, LogOut::STDOUT) {
+  m_db.setLogger(&m_log);
   auto seed = std::chrono::system_clock::now().time_since_epoch().count();
-  salt_generator.seed(seed);
+  m_salt_generator.seed(seed);
 } catch (const std::runtime_error &e) {
   std::cerr << "Failed to initialize database in LoginManager: " << e.what()
             << std::endl;
   throw;
 }
+/*
+ * Methods for Logger settings
+ */
+void LoginManager::logToFile(string const &fpath) { m_log.outFilePath(fpath); }
+void LoginManager::setLogLevel(LogLevel const &level) { m_log.level(level); }
 
-void LoginManager::startAPI() { api_status = udpServer::run(*this); }
+// TODO
+void LoginManager::logToStdout() {}
+
+/*
+ * Methods for server control
+ */
+void LoginManager::startAPI() { pm_api_status = udpServer::run(*this); }
 void LoginManager::stopAPI() {
-  int rc = udpServer::stop(api_status);
+  int rc = udpServer::stop(pm_api_status);
   if (rc) {
-    std::cerr << "Server closed successfully." << std::endl;
+    m_log.entry(LogLevel::INFO, "Server closed successfully.");
   } else {
-
-    std::cerr << "Server failed to close." << std::endl;
+    m_log.entry(LogLevel::ERROR, "Server failed to close.");
   }
 }
-
-int LoginManager::login(const std::string &username,
-                        const std::string &password) {
-  std::string hash_pw;
+/*
+ * Class methods for managing database interaction
+ */
+int LoginManager::login(const string &username, const string &password) {
+  string hash_pw;
   if (!getHashedPassword(username, password, hash_pw)) {
-    std::cerr << "Error getting hashed password" << std::endl;
+    string text = "Could not get hashed password for username: " + username;
+    m_log.entry(LogLevel::INFO, text);
     return -1;
   }
-  return db.checkPassword(username, hash_pw);
+  return m_db.checkPassword(username, hash_pw);
 }
 
-int LoginManager::addLogin(const std::string &username,
-                           const std::string &password) {
-  std::string d_salt = generateSalt();
+int LoginManager::addLogin(const string &username, const string &password) {
+  string d_salt = generateSalt();
   if (d_salt.empty()) {
     return -1;
   }
 
-  std::string hashedPassword =
+  string hashedPassword =
       HashPassword::usingSHA256(STATIC_SALT + password + d_salt);
   if (hashedPassword.empty()) {
     return -2;
   }
-  return db.addUser(username, hashedPassword, d_salt);
+  return m_db.addUser(username, hashedPassword, d_salt);
 }
-int LoginManager::delLogin(const std::string &username,
-                           const std::string &password) {
-  std::string hash_pw;
+int LoginManager::delLogin(const string &username, const string &password) {
+  string hash_pw;
   if (!getHashedPassword(username, password, hash_pw)) {
     return -1;
   }
-  return db.deleteUser(username, hash_pw);
+  return m_db.deleteUser(username, hash_pw);
 }
 
-bool LoginManager::getHashedPassword(const std::string &usid,
-                                     const std::string &pw,
-                                     std::string &hashed_pw) {
-  std::string d_salt;
+int LoginManager::changePassword(const string &username,
+                                 const string &password) {
+  string d_salt = generateSalt();
+  if (d_salt.empty()) {
+    return -1;
+  }
+
+  string hash_pw = HashPassword::usingSHA256(STATIC_SALT + password + d_salt);
+  if (hash_pw.empty()) {
+    return -2;
+  }
+  return m_db.updatePassword(username, hash_pw, d_salt);
+}
+
+/*
+ * Helper-functions defined below.
+ */
+bool LoginManager::getHashedPassword(const string &usid, const string &pw,
+                                     string &hashed_pw) {
+  string d_salt;
   if (!getSalt(usid, d_salt) || d_salt.empty()) {
+    string text =
+        "LoginManager::getHashedPassword Could not get salt with usid: " + usid;
+    m_log.entry(LogLevel::WARNING, text);
     return false;
   }
   hashed_pw = HashPassword::usingSHA256(STATIC_SALT + pw + d_salt);
   return !hashed_pw.empty();
 }
-bool LoginManager::getSalt(const std::string &username, std::string &salt) {
-  return (db.getUserSalt(username, salt) == 0);
+bool LoginManager::getSalt(const string &username, string &salt) {
+  return (m_db.getUserSalt(username, salt) == 0);
 }
-std::string LoginManager::generateSalt() {
+string LoginManager::generateSalt() {
   std::stringstream stream;
-  stream << std::hex << salt_generator();
-  return std::string(stream.str());
-}
-void LoginManager::hash(const std::string &input, std::string &output) {
-  // Dummy hash function that just assigns input to output for demonstration
-  output = "hashed_" + input;
+  stream << std::hex << m_salt_generator();
+  return string(stream.str());
 }

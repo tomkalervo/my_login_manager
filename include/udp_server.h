@@ -49,6 +49,7 @@ private:
   static int opLogin(Operation &op);
   static int opAdd(Operation &op);
   static int opDel(Operation &op);
+  static int opModPassw(Operation &op);
 };
 
 #endif // ! UDP_SERVER_H

@@ -82,6 +82,7 @@ void startApi() {
   lm.startAPI();
   std::cout << "API server closed.\n";
 }
+
 int testDel(string uname, string passw, int sockfd,
             struct sockaddr_in servaddr) {
 
@@ -137,6 +138,34 @@ int testAdd(string uname, string passw, int sockfd,
   int rc = sendMsg(sockfd, servaddr, msg, msg_len);
   return rc;
 }
+
+int testChangePassword(string uname, string passw, int sockfd,
+                       struct sockaddr_in servaddr) {
+  uint8_t op = 5;
+  uint16_t uname_len = uname.length();
+  uint16_t passw_len = passw.length();
+  int msg_len = sizeof(uint8_t) + sizeof(uint16_t) + uname_len +
+                sizeof(uint16_t) + passw_len;
+  char msg[msg_len];
+  int idx = 0;
+  msg[idx] = static_cast<char>(op);
+  idx += sizeof(uint8_t);
+
+  std::memcpy(msg + idx, &uname_len, sizeof(uname_len));
+  idx += sizeof(uint16_t);
+
+  std::memcpy(msg + idx, uname.data(), uname_len);
+  idx += uname_len;
+
+  std::memcpy(msg + idx, &passw_len, sizeof(passw_len));
+  idx += sizeof(uint16_t);
+
+  std::memcpy(msg + idx, passw.data(), passw_len);
+
+  int rc = sendMsg(sockfd, servaddr, msg, msg_len);
+  return rc;
+}
+
 int testLogin(string uname, string passw, int sockfd,
               struct sockaddr_in servaddr) {
 
@@ -185,6 +214,7 @@ void testApi() {
   string passw = "";
   uname = "testtom@mail.io";
   passw = "testpassw1234";
+  std::cout << "01 API Login existing user\n";
   int rc = testLogin(uname, passw, sockfd, servaddr);
   if (rc == 0x00000000) {
     std::cout << "01 API Login correct usernamne & password test passed."
@@ -197,6 +227,7 @@ void testApi() {
 
   uname = "testtom@mail.io";
   passw = "testpassw1230";
+  std::cout << "02 API Login w/ bad password\n";
   rc = testLogin(uname, passw, sockfd, servaddr);
   if (rc == 0x00000001) {
     std::cout << "02 API Login bad usernamne & password test passed."
@@ -209,6 +240,7 @@ void testApi() {
 
   uname = "testadd@mail.io";
   passw = ")*Hk&1230!-test";
+  std::cout << "03 API add user\n";
   rc = testAdd(uname, passw, sockfd, servaddr);
   if (rc == 0x00000000) {
     std::cout << "03 API Add usernamne & password test passed." << std::endl;
@@ -218,6 +250,7 @@ void testApi() {
     std::cout << std::endl;
   }
 
+  std::cout << "04 API Login added user\n";
   rc = testLogin(uname, passw, sockfd, servaddr);
   if (rc == 0x00000000) {
     std::cout << "04 API Login with added usernamne & password test passed."
@@ -229,13 +262,63 @@ void testApi() {
     std::cout << std::endl;
   }
 
-  rc = testDel(uname, passw, sockfd, servaddr);
-  if (rc == 0x00000000) {
-    std::cout << "05 API Delete of added usernamne & password test passed."
+  string new_passw = "T3St-new-!passw";
+  string bad_uname = "tsetadd@mail.io";
+
+  std::cout << "05 API Bad change to new password - invalid username\n";
+  rc = testChangePassword(bad_uname, new_passw, sockfd, servaddr);
+  if (rc == 0x00000001) {
+    std::cout << "05 API change password with non valid usernamne test passed."
               << std::endl;
   } else {
     std::cout
-        << "05 API Delete of added usernamne & password test failed. RC: ";
+        << "05 API change password with non valid usernamne test failed: ";
+    printBits(rc);
+    std::cout << std::endl;
+  }
+
+  std::cout << "06 API Change to new password\n";
+  rc = testChangePassword(uname, new_passw, sockfd, servaddr);
+  if (rc == 0x00000000) {
+    std::cout << "06 API change password with valid usernamne test passed."
+              << std::endl;
+  } else {
+    std::cout << "06 API change password with valid usernamne test failed: ";
+    printBits(rc);
+    std::cout << std::endl;
+  }
+
+  std::cout << "07 API Login w/ new password\n";
+  rc = testLogin(uname, new_passw, sockfd, servaddr);
+  if (rc == 0x00000000) {
+    std::cout << "07 API Login with new password test passed." << std::endl;
+  } else {
+    std::cout << "07 API Login with new password test failed: ";
+    printBits(rc);
+    std::cout << std::endl;
+  }
+
+  std::cout << "08 API Invalid delete of added user - old password\n";
+  rc = testDel(uname, passw, sockfd, servaddr);
+  if (rc == 0x00000001) {
+    std::cout << "08 API Invalid delete of added usernamne & old password test "
+                 "passed."
+              << std::endl;
+  } else {
+    std::cout << "08 API Invalid delete of added usernamne & old password test "
+                 "failed: ";
+    printBits(rc);
+    std::cout << std::endl;
+  }
+
+  std::cout << "09 API Delete of added user - new password\n";
+  rc = testDel(uname, new_passw, sockfd, servaddr);
+  if (rc == 0x00000000) {
+    std::cout << "09 API Delete of added usernamne & new password test passed."
+              << std::endl;
+  } else {
+    std::cout
+        << "09 API Delete of added usernamne & new password test failed. RC: ";
     printBits(rc);
     std::cout << std::endl;
   }

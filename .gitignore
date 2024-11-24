@@ -60,3 +60,4 @@ DartConfiguration.tcl
 
 # Ignore testing logs
 /Testing/
+/logs

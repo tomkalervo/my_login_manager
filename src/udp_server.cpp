@@ -13,11 +13,13 @@
 #include <arpa/inet.h>
 #include <cstdlib>
 #include <iostream>
+#include <memory>
 #include <netinet/in.h>
 #include <ostream>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/wait.h>
 #include <thread>
 #include <unistd.h>
 #define PORT 1717
@@ -56,6 +58,50 @@ int udpServer::getIntVal(const char *msg, const int size) {
   }
   return val;
 }
+/*
+ * opModPassw handles requests for password modification.
+ * A requests consists of an existing username and a new password.
+ * These are sent to the method ChangePassword in the LoginManager object.
+ */
+int udpServer::opModPassw(Operation &op) {
+  // Username at first parameter
+  // Length of username in first 2 bytes
+  if (op.idx + 2 >= MAXLINE) {
+    return PARAMETER_ER;
+  }
+  int len = getIntVal(&op.msg[op.idx], 2);
+  op.idx += 2;
+  if (op.idx + len >= MAXLINE) {
+    return PARAMETER_ER;
+  }
+  string uname = string(&op.msg[op.idx], len);
+  op.idx += uname.length();
+  std::cerr << "opModPassw. uname: " << uname << std::endl;
+  // New password at second parameter
+  // Lengt of password in first 2 bytes
+  if (op.idx + 2 >= MAXLINE) {
+    return PARAMETER_ER;
+  }
+  len = getIntVal(&op.msg[op.idx], 2);
+  op.idx += 2;
+  if (op.idx + len >= MAXLINE) {
+    return PARAMETER_ER;
+  }
+  string passw = string(&op.msg[op.idx], len);
+  std::cerr << "opModPassw. passw: " << passw << std::endl;
+  op.idx += passw.length();
+
+  // Run change password procedure
+  int rc = op.lm.changePassword(uname, passw);
+  if (rc == 0) {
+    return TRANS_SUCCESS;
+  } else if (rc > 0) {
+    return TRANS_FAILURE;
+  } else {
+    return TRANS_ERROR;
+  }
+}
+
 int udpServer::opDel(Operation &op) {
   // Username at first parameter
   if (op.idx + 2 >= MAXLINE) {
@@ -167,6 +213,8 @@ int udpServer::process_msg(Operation &op) {
     return opAdd(op);
   case 4:
     return opDel(op);
+  case 5:
+    return opModPassw(op);
   default:
     return OP_CODE_ER;
   }
@@ -265,7 +313,7 @@ void *udpServer::run(LoginManager &lm) {
 // false (0) if unsuccessfull or true (1) if successfull
 int udpServer::stop(void *st) {
   if (st == nullptr) {
-    return 0;
+    return 1; // There is nothing to stop
   }
   // Set the stop-bit of the server
   Status *status = static_cast<Status *>(st);
@@ -273,13 +321,13 @@ int udpServer::stop(void *st) {
   status->control |= 0x1;
   status->mtx.unlock();
 
-  // Create socket to sent no-op to server.
+  // Create socket to send a no-op to server.
   int sockfd;
   struct sockaddr_in servaddr;
   int noop = 0;
 
   if ((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
-    perror("Socket creation failed");
+    perror("Socket creation failed in udpServer::stop");
     return 0;
   }
 
@@ -295,10 +343,10 @@ int udpServer::stop(void *st) {
                 << std::endl;
       return 0;
     }
-    // Send noop
+    // Send no-op
     if (sendto(sockfd, &noop, sizeof(noop), 0, (struct sockaddr *)&servaddr,
                sizeof(servaddr)) < 0) {
-      perror("Send failed");
+      perror("Send failed from udpServer::stop");
       close(sockfd);
       return 0;
     }

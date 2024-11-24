@@ -4,6 +4,7 @@ project(LoginManager)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 # Conditional sanitizers for macOS vs Linux
 if(APPLE)
     # macOS: use only AddressSanitizer, as LeakSanitizer is not supported
@@ -33,6 +34,7 @@ set(SOURCES
     src/sanitizer.cpp
     sqlite3/sqlite3.c
     src/udp_server.cpp
+    src/logger.cpp
   )
 # Create a library from the source files
 add_library(login_manager_lib ${SOURCES})

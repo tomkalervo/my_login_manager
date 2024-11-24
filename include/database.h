@@ -1,6 +1,7 @@
 #ifndef DATABASE_H
 #define DATABASE_H
 
+#include "logger.h"
 #include <sqlite3.h>
 #include <string>
 using std::string;
@@ -16,8 +17,13 @@ public:
   int addUser(const string &secid, const string &password, const string &salt);
   int deleteUser(const string &secid, const string &password);
   int checkPassword(const string &secid, const string &password);
+  int updatePassword(const string &secid, const string &password,
+                     const string &salt);
+
+  void setLogger(Logger *log);
 
 private:
+  Logger *m_log;
   sqlite3 *db;
   sqlite3_stmt *check_password_stmt;
   sqlite3_stmt *select_id_stmt;
@@ -27,6 +33,8 @@ private:
   sqlite3_stmt *add_password_stmt;
   sqlite3_stmt *get_password_stmt;
   sqlite3_stmt *get_salt_stmt;
+  sqlite3_stmt *upd_salt_stmt;
+  sqlite3_stmt *upd_password_stmt;
 };
 
 #endif // DATABASE_H
