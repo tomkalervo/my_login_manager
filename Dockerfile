@@ -38,5 +38,6 @@ RUN cmake -S . -B build
 RUN cmake --build build --config Release
 
 # Specify the command to run on container start
-# CMD ["./login_manager"]
+ENTRYPOINT ["./build/login_manager"]
+CMD ["-sp", "/data/config/settings.yaml"]
 
