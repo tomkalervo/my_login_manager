@@ -18,8 +18,8 @@ LoginManager::LoginManager(const string &dbFile) try
   auto seed = std::chrono::system_clock::now().time_since_epoch().count();
   m_salt_generator.seed(seed);
 } catch (const std::runtime_error &e) {
-  std::cerr << "Failed to initialize database in LoginManager: " << e.what()
-            << std::endl;
+  std::cerr << "LoginManager::LoginManager Failed to initialize database: "
+            << e.what() << std::endl;
   throw;
 }
 /*
@@ -38,9 +38,11 @@ void LoginManager::startAPI() { pm_api_status = udpServer::run(*this); }
 void LoginManager::stopAPI() {
   int rc = udpServer::stop(pm_api_status);
   if (rc) {
-    m_log.entry(LogLevel::INFO, "Server closed successfully.");
+    m_log.entry(LogLevel::INFO,
+                "LoginManager::stopAPI Server closed successfully.");
   } else {
-    m_log.entry(LogLevel::ERROR, "Server failed to close.");
+    m_log.entry(LogLevel::ERROR,
+                "LoginManager::stopAPI Server failed to close.");
   }
 }
 /*
@@ -49,7 +51,9 @@ void LoginManager::stopAPI() {
 int LoginManager::login(const string &username, const string &password) {
   string hash_pw;
   if (!getHashedPassword(username, password, hash_pw)) {
-    string text = "Could not get hashed password for username: " + username;
+    string text =
+        "LoginManager::login Could not get hashed password for username: " +
+        username;
     m_log.entry(LogLevel::INFO, text);
     return -1;
   }

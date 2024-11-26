@@ -24,7 +24,19 @@ Logger::Logger(LogLevel const &level, LogOut const &out)
 
 Logger::~Logger() { closeFile(); }
 
-void Logger::level(LogLevel level) { m_level = level; }
+void Logger::level(LogLevel level) {
+  m_level = level;
+
+  if (LogLevel::INFO == level) {
+    std::cout << "LoginManager::setLogLevel new level set to INFO" << std::endl;
+  } else if (LogLevel::WARNING == level) {
+    std::cout << "LoginManager::setLogLevel new level set to WARNING"
+              << std::endl;
+  } else if (LogLevel::ERROR == level) {
+    std::cout << "LoginManager::setLogLevel new level set to ERROR"
+              << std::endl;
+  }
+}
 
 void Logger::outFilePath(string fpath) {
   if (LogOut::FILE != m_out) {

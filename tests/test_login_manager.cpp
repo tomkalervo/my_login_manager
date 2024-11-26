@@ -4,6 +4,7 @@
 
 void testLogin() {
   LoginManager lm("../database/login.db");
+  lm.setLogLevel(Logger::LogLevel::INFO);
 
   const std::string login_secid = "test123@mail.io";
   const std::string login_pw = "1234PassWord";

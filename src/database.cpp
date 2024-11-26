@@ -190,14 +190,16 @@ Database::~Database() {
 void Database::setLogger(Logger *log) {
   if (log) {
     m_log = log;
-    m_log->entry(LogLevel::INFO, "Logger added to Database object.");
+    m_log->entry(LogLevel::INFO,
+                 "Database::setLogger Logger added to Database object.");
   }
 }
 
 int Database::checkPassword(const std::string &secid,
                             const std::string &password) {
   if (!check_password_stmt) {
-    m_log->entry(LogLevel::ERROR, "Error check_password_stmt not initialized");
+    m_log->entry(LogLevel::ERROR,
+                 "Database::checkPassword check_password_stmt not initialized");
     return SQLITE_ERROR;
   }
 
@@ -329,7 +331,12 @@ int Database::deleteUser(const std::string &secid,
     text.append(", rc: ");
     text.append(std::to_string(rc));
     text.append(" >> ROLLBACK");
-    m_log->entry(LogLevel::INFO, text);
+
+    if (rc == SQLITE_DONE) {
+      m_log->entry(LogLevel::INFO, text);
+    } else {
+      m_log->entry(LogLevel::ERROR, text);
+    }
     if (sqlite3_exec(db, "ROLLBACK;", 0, 0, &errMsg) != SQLITE_OK) {
       text = "Database::deleteUser exevute step select id following ROLLBACK: ";
       text.append(errMsg);
@@ -339,7 +346,6 @@ int Database::deleteUser(const std::string &secid,
     sqlite3_reset(select_id_stmt);
     return rc;
   }
-
   sqlite3_int64 id = sqlite3_column_int(select_id_stmt, 0);
   sqlite3_reset(select_id_stmt);
 
@@ -786,7 +792,7 @@ int Database::getUserSalt(const string &secid, string &salt) {
     text.append(sqlite3_errmsg(db));
     text.append(", rc: ");
     text.append(std::to_string(rc));
-    m_log->entry(LogLevel::ERROR, text);
+    m_log->entry(LogLevel::INFO, text);
     sqlite3_reset(get_salt_stmt);
     return rc;
   }
@@ -825,7 +831,7 @@ int Database::getUserPassword(const string &secid, string &password) {
     text.append(sqlite3_errmsg(db));
     text.append(", rc: ");
     text.append(std::to_string(rc));
-    m_log->entry(LogLevel::ERROR, text);
+    m_log->entry(LogLevel::INFO, text);
     sqlite3_reset(get_password_stmt);
     return rc;
   }
