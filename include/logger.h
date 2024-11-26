@@ -2,7 +2,8 @@
 #define LOGGER_H
 #include <fstream>
 #include <string>
-#include <sys/_types/_u_int32_t.h>
+//#include <sys/_types/_u_int32_t.h>
+#include <cstdint>
 
 using std::string;
 
